@@ -7,14 +7,14 @@ more than $50,000 a year. I've taken this dataset, explored and cleaned it, and
 set up a model bake-off to see how well I can predict the high-income indicator.
 I'll conduct the same analysis a) in R, b) with pandas / scikit-learn in Python.
 
-Let's use these measures of performance:
-  o) inspecting a confusion matrix
-  o) the ROC curve, plotted
-  o) the area under the ROC curve
-
 This is much more about me picking up the scikit-learn API than it is about good
 predictive performance :-)
 
-TODO:
-  o) this should be actual markdown
-  o) the R should use caret
+## Measures of performance:
+ - inspecting a confusion matrix
+ - the ROC curve, plotted
+ - the area under the ROC curve
+
+## TODO:
+ - the R should use caret
+ - the python version

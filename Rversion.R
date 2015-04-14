@@ -1,21 +1,6 @@
 ### R vs pandas + scikit-learn testing script
-### We have a dataset from the 1990 Census of individuals, with demographic and
-### economic traits, and a binary indicator for whether the individual made
-### more than $50,000 a year. Let's take this dataset, explore and clean it, and
-### have a model bake-off to see how well we can predict the high-income indicator.
-### We'll conduct the same analysis a) in R, b) with pandas / scikit-learn in Python.
-
-### We'll use these metrics of performance:
-###     o) inspecting the confusion matrix
-###     o) the ROC curve, plotted
-###     o) the area under the ROC curve
-###     o) the accuracy and error rate
 # ==================================================================================
-
-library(pscl)
 library(ROCR)
-library(ggplot2)
-
 setwd("~/Downloads/rpy_example")
 
 ## Read in the data
@@ -55,37 +40,54 @@ summary(train$fnlwgt)
 summary(train$high_income)
 summary(test$high_income)
 
+##########
 ## Logistic regression
-logit.mod <- glm(high_income ~ age + workclass + education_num +
+##########
+mod <- glm(high_income ~ age + workclass + education_num +
                               marital_status + occupation + relationship + race + sex +
                               capital_gain + capital_loss + hours_per_week + mainland_us,
                  data=train, family=binomial("logit"))
-summary(logit.mod); pR2(logit.mod)
+summary(mod)
 
-yPred <- ifelse(predict(logit.mod, newdata=test, type="response") >= 0.5, 1, 0)
-
-#Confusion matrix
-prop.table(table(test$income_bin, yPred))
-
-#ROC curve, AUC, accuracy/error rates
+yPred <- predict(mod, newdata=test, type="response")
 pred <- prediction(yPred, test$income_bin)
+
+#Confusion matrix at 0.5 threshold
+prop.table(table(test$high_income, ifelse(yPred >= 0.5, 1, 0)))
+
+#ROC curve
 perf <- performance(pred, "tpr", x.measure="fpr")
 plot(perf)
 
-## Logistic regression with PCA
+#AUC: area under the ROC curve
+as.numeric(performance(pred, "auc")@y.values)
 
-# Support vector machine
+##########
+## Support vector machine
+##########
+library(e1071)
 
-# Random forest
+##########
+## Random forest
+##########
+library(randomForest)
 
-# Neural network with a single hidden layer
+##########
+## Neural network with a single hidden layer
+##########
+library(nnet)
 
-# k-NN
+##########
+## k-NN
+##########
+library(class)
 
-# Lasso / ridge / elastic-net
+##########
+## Lasso / ridge / elastic-net
+##########
+library(glmnet)
 
-# Bayesian logit
-
-# Gaussian process model
-
-# 
+##########
+## Gaussian process model
+##########
+library(gptk)

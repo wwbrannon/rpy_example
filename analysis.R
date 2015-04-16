@@ -63,18 +63,30 @@ mod <- train(form,
 yPred <- predict(mod, newdata=test, type="prob")
 plot(roc(test$high_income, yPred$y))
 
-yPred <- predict(mod, newdata=test, type="raw")
-confusionMatrix(yPred, test$high_income, positive='y')
-
 #overfit? nope!
-yPred <- predict(mod, newdata=training, type="raw")
-confusionMatrix(yPred, training$high_income, positive='y')
+yPred <- predict(mod, newdata=training, type="prob")
+plot(roc(training$high_income, yPred$y))
 
 ##########
 ## Support vector machine
 ##########
-mod <- train(form, data=training, method="svm", trControl=tc)
+mod <- train(form,
+             data=training,
+             method="svmRadial",
+             metric="ROC",
+             tuneGrid=expand.grid(C=10^seq(-5, 2), sigma=2^seq(-10, 4)),
+             trControl=trainControl(method="cv",
+                                    number=10,
+                                    classProbs=TRUE,
+                                    savePred=TRUE,
+                                    summaryFunction=twoClassSummary))
 
+yPred <- predict(mod, newdata=test, type="prob")
+plot(roc(test$high_income, yPred$y))
+
+#overfit? nope!
+yPred <- predict(mod, newdata=training, type="prob")
+plot(roc(training$high_income, yPred$y))
 
 ##########
 ## Random forest

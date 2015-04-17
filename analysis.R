@@ -52,12 +52,14 @@ trc <- trainControl(method="repeatedcv", number=10, repeats=3,
                     classProbs=T, savePred=T, )
 
 ## Logistic regression
+set.seed(447647079)
 glm_mod <- train(form,
              data=training,
              method="glm",
              trControl=trc)
 
 ## Support vector machine
+set.seed(447647079)
 svm_mod <- train(form,
              data=training,
              method="svmLinear",
@@ -65,12 +67,14 @@ svm_mod <- train(form,
              trControl=trc)
 
 ## Random forest
+set.seed(447647079)
 rf_mod <- train(form,
              data=training,
              method="rf",
              trControl=trc)
 
 ## Neural network with a single hidden layer
+set.seed(447647079)
 nnet_mod <- train(form,
              data=training,
              method="nnet",

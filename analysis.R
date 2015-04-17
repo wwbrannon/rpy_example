@@ -1,10 +1,6 @@
 ### R vs pandas + scikit-learn testing script
-
-#Confusion matrix at 0.5 threshold
-#ROC curve
-#AUC: area under the ROC curve
-
 # ==================================================================================
+
 library(caret)
 library(pROC)
 setwd("~/Downloads/rpy_example")
@@ -42,56 +38,74 @@ dv <- all.vars(form)[1]
 ivs <- all.vars(form)[-1]
 
 ## Create a training/test split
-df$in_train <- sample(0:1, nrow(df), replace=TRUE)
-balance_form <- as.formula(paste("in_train ~ ", paste(ivs, collapse="+")))
+df$train_section <- sample(0:2, nrow(df), replace=TRUE)
+balance_form <- as.formula(paste("(train_section == 0) ~ ", paste(ivs, collapse="+")))
 summary(glm(balance_form, data=df, family=binomial("logit")))
 
-training <- df[df$in_train == 1,]
-test     <- df[df$in_train == 0,]
+training <- df[df$train_section != 0,]
+test     <- df[df$train_section == 0,]
 
 # =========================================================================
 ### The model bake-off!
 
-##########
+trc <- trainControl(method="repeatedcv", number=10, repeats=3,
+                    classProbs=T, savePred=T, )
+
 ## Logistic regression
-##########
-mod <- train(form,
+glm_mod <- train(form,
              data=training,
              method="glm",
-             trControl=trainControl(method="none"))
+             trControl=trc)
 
-yPred <- predict(mod, newdata=test, type="prob")
-plot(roc(test$high_income, yPred$y))
-
-#overfit? nope!
-yPred <- predict(mod, newdata=training, type="prob")
-plot(roc(training$high_income, yPred$y))
-
-##########
 ## Support vector machine
-##########
-mod <- train(form,
+svm_mod <- train(form,
              data=training,
-             method="svmRadial",
-             metric="ROC",
-             tuneGrid=expand.grid(C=10^seq(-5, 2), sigma=2^seq(-10, 4)),
-             trControl=trainControl(method="cv",
-                                    number=10,
-                                    classProbs=TRUE,
-                                    savePred=TRUE,
-                                    summaryFunction=twoClassSummary))
+             method="svmLinear",
+             tuneGrid=data.frame(C=10^seq(-3, 3)),
+             trControl=trc)
 
-yPred <- predict(mod, newdata=test, type="prob")
+## Random forest
+rf_mod <- train(form,
+             data=training,
+             method="rf",
+             trControl=trc)
+
+## Neural network with a single hidden layer
+nnet_mod <- train(form,
+             data=training,
+             method="nnet",
+             trControl=trc)
+
+## Results
+#Cross-validated
+results <- resamples(list(glm=glm_mod, svm=svm_mod, rf=rf_mod, nnet=nnet_mod))
+
+summary(results)
+bwplot(results)
+dotplot(results)
+
+#And on the holdout set
+yPred <- predict(glm_mod, newdata=test, type="prob")
 plot(roc(test$high_income, yPred$y))
 
-#overfit? nope!
-yPred <- predict(mod, newdata=training, type="prob")
+yPred <- predict(glm_mod, newdata=training, type="prob")
 plot(roc(training$high_income, yPred$y))
 
-##########
-## Random forest
-##########
+yPred <- predict(svm_mod, newdata=test, type="prob")
+plot(roc(test$high_income, yPred$y))
 
-##########
-## Neural network with a single hidden layer
-##########
+yPred <- predict(svm_mod, newdata=training, type="prob")
+plot(roc(training$high_income, yPred$y))
+
+yPred <- predict(rf_mod, newdata=test, type="prob")
+plot(roc(test$high_income, yPred$y))
+
+yPred <- predict(rf_mod, newdata=training, type="prob")
+plot(roc(training$high_income, yPred$y))
+
+yPred <- predict(nnet_mod, newdata=test, type="prob")
+plot(roc(test$high_income, yPred$y))
+
+yPred <- predict(nnet_mod, newdata=training, type="prob")
+plot(roc(training$high_income, yPred$y))
+
